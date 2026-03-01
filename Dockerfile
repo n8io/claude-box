@@ -4,6 +4,7 @@ FROM node:lts-slim
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
+    gosu \
     openssh-client \
     zsh \
     curl \
@@ -60,4 +61,10 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | b
 
 WORKDIR /
 
-ENTRYPOINT ["claude"]
+# Switch back to root so the entrypoint can fix SSH socket permissions
+# before dropping back to the node user via gosu.
+USER root
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

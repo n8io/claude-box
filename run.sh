@@ -46,6 +46,8 @@ exec docker run -it --rm \
   ${SSH_AUTH_ARGS[@]+"${SSH_AUTH_ARGS[@]}"} \
   -v "$HOME/.claude:/home/node/.claude" \
   -v "$HOME/.claude.json:/home/node/.claude.json" \
+  -v "$HOME/.gitconfig:/home/node/.gitconfig:ro" \
+  -v "$HOME/.gnupg:/home/node/.gnupg:ro" \
   -v "$(pwd):/${PROJECT_DIR}" \
   --workdir "/${PROJECT_DIR}" \
   "$IMAGE" \
