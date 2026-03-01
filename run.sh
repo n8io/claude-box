@@ -24,6 +24,7 @@ exec docker run -it --rm \
   --name "$CONTAINER_NAME" \
   ${API_KEY_ARGS[@]+"${API_KEY_ARGS[@]}"} \
   -v "$HOME/.claude:/home/node/.claude" \
+  -v "$HOME/.claude.json:/home/node/.claude.json" \
   -v "$(pwd):/workspace" \
   "$IMAGE" \
   --dangerously-skip-permissions \

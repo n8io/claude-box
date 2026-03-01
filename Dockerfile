@@ -29,12 +29,13 @@ RUN wget -O- https://apt.releases.hashicorp.com/gpg \
 RUN npm install -g playwright \
   && playwright install chromium --with-deps
 
-# ── Layer 4: Claude Code ───────────────────────────────────────────────────────
-RUN npm install -g @anthropic-ai/claude-code
-
-# ── Layers 5-8: User-level tools (run as node) ────────────────────────────────
+# ── Layers 4-8: User-level tools (run as node) ────────────────────────────────
 USER node
 ENV HOME=/home/node
+ENV PATH="/home/node/.local/bin:$PATH"
+
+# Layer 4: Claude Code (native installer)
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Layer 5: oh-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
