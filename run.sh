@@ -4,10 +4,14 @@ set -euo pipefail
 IMAGE="claude-box"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Auto-build image if not present
-if ! docker image inspect "$IMAGE" &>/dev/null; then
-  echo "Image '$IMAGE' not found — building now..."
-  docker build -t "$IMAGE" "$SCRIPT_DIR"
+# Auto-build image if missing or Dockerfile has changed
+DOCKERFILE_HASH="$(md5sum "$SCRIPT_DIR/Dockerfile" 2>/dev/null || md5 -q "$SCRIPT_DIR/Dockerfile")"
+DOCKERFILE_HASH="${DOCKERFILE_HASH%% *}"
+IMAGE_HASH="$(docker image inspect "$IMAGE" --format '{{index .Config.Labels "dockerfile.md5"}}' 2>/dev/null || true)"
+
+if [[ "$IMAGE_HASH" != "$DOCKERFILE_HASH" ]]; then
+  echo "Building image '$IMAGE'..."
+  docker build --label "dockerfile.md5=$DOCKERFILE_HASH" -t "$IMAGE" "$SCRIPT_DIR"
 fi
 
 # Container name based on current project dir
