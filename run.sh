@@ -22,7 +22,7 @@ fi
 
 exec docker run -it --rm \
   --name "$CONTAINER_NAME" \
-  "${API_KEY_ARGS[@]}" \
+  ${API_KEY_ARGS[@]+"${API_KEY_ARGS[@]}"} \
   -v "$HOME/.claude:/home/node/.claude" \
   -v "$(pwd):/workspace" \
   "$IMAGE" \
