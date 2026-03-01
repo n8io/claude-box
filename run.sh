@@ -26,10 +26,12 @@ fi
 
 exec docker run -it --rm \
   --name "$CONTAINER_NAME" \
+  -e CLAUDE_BOX=1 \
   ${API_KEY_ARGS[@]+"${API_KEY_ARGS[@]}"} \
   -v "$HOME/.claude:/home/node/.claude" \
   -v "$HOME/.claude.json:/home/node/.claude.json" \
-  -v "$(pwd):/workspace" \
+  -v "$(pwd):/${PROJECT_DIR}" \
+  --workdir "/${PROJECT_DIR}" \
   "$IMAGE" \
   --dangerously-skip-permissions \
   "$@"

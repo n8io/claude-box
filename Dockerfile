@@ -57,6 +57,6 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | b
   && nvm install --lts \
   && nvm alias default lts/*
 
-WORKDIR /workspace
+WORKDIR /
 
 ENTRYPOINT ["claude"]

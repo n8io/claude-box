@@ -21,20 +21,21 @@ Then just run the container — it reuses your credentials via the `~/.claude` v
 ANTHROPIC_API_KEY=<your-key> ./run.sh
 ```
 
-The image builds automatically on first run. After that, subsequent runs start instantly.
+The image builds automatically on first run and rebuilds whenever the Dockerfile changes. Otherwise subsequent runs start instantly.
 
 ## What it does
 
-- Mounts the current directory as `/workspace` so Claude can work on your project
+- Mounts the current directory as `/<dirname>` inside the container so Claude can work on your project
 - Mounts `~/.claude` for persistent settings, memory, sessions, and auth credentials
 - Runs as the non-root `node` user inside the container
 - Passes `--dangerously-skip-permissions` by default (safe inside the sandbox)
+- Shows 🔐 in the Claude status line to indicate you're running securely inside a container
 
 ## Included tools
 
 | Tool | Notes |
 |------|-------|
-| Claude Code | Latest via npm |
+| Claude Code | Latest via native installer |
 | Node.js | System LTS + NVM for switching versions |
 | Python 3 | With pip |
 | Terraform | Latest via HashiCorp apt repo |
