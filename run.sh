@@ -24,10 +24,26 @@ if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
   API_KEY_ARGS=(-e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY")
 fi
 
+# SSH agent forwarding so git push works inside the container
+SSH_AUTH_ARGS=()
+if [[ "$(uname)" == "Darwin" ]]; then
+  # Docker Desktop on macOS bridges the host SSH agent here
+  SSH_AUTH_ARGS=(
+    -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock
+    -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock
+  )
+elif [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
+  SSH_AUTH_ARGS=(
+    -v "$SSH_AUTH_SOCK:/ssh-auth.sock"
+    -e SSH_AUTH_SOCK=/ssh-auth.sock
+  )
+fi
+
 exec docker run -it --rm \
   --name "$CONTAINER_NAME" \
   -e CLAUDE_BOX=1 \
   ${API_KEY_ARGS[@]+"${API_KEY_ARGS[@]}"} \
+  ${SSH_AUTH_ARGS[@]+"${SSH_AUTH_ARGS[@]}"} \
   -v "$HOME/.claude:/home/node/.claude" \
   -v "$HOME/.claude.json:/home/node/.claude.json" \
   -v "$(pwd):/${PROJECT_DIR}" \
