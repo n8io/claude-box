@@ -23,16 +23,22 @@ if [[ -S "${SSH_AUTH_SOCK:-}" ]]; then
   chmod 777 "${SSH_AUTH_SOCK}"
 fi
 
+# Allow git to operate on mounted directories regardless of ownership.
+# The workdir is owned by the host UID, not node, so git would otherwise refuse.
+export GIT_CONFIG_COUNT=1
+export GIT_CONFIG_KEY_0=safe.directory
+export GIT_CONFIG_VALUE_0='*'
+
 # ~/.gnupg is mounted read-only so the GPG agent can't start.
 # Override commit signing to use the forwarded SSH agent instead.
 if [[ -S "${SSH_AUTH_SOCK:-}" ]]; then
   SSH_SIGNING_KEY="$(gosu node ssh-add -L 2>/dev/null | head -1 || true)"
   if [[ -n "$SSH_SIGNING_KEY" ]]; then
-    export GIT_CONFIG_COUNT=2
-    export GIT_CONFIG_KEY_0=gpg.format
-    export GIT_CONFIG_VALUE_0=ssh
-    export GIT_CONFIG_KEY_1=user.signingkey
-    export GIT_CONFIG_VALUE_1="key::${SSH_SIGNING_KEY}"
+    export GIT_CONFIG_COUNT=3
+    export GIT_CONFIG_KEY_1=gpg.format
+    export GIT_CONFIG_VALUE_1=ssh
+    export GIT_CONFIG_KEY_2=user.signingkey
+    export GIT_CONFIG_VALUE_2="key::${SSH_SIGNING_KEY}"
   fi
 fi
 

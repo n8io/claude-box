@@ -14,9 +14,7 @@ if [[ "$IMAGE_HASH" != "$DOCKERFILE_HASH" ]]; then
   docker build --label "dockerfile.md5=$DOCKERFILE_HASH" -t "$IMAGE" "$SCRIPT_DIR"
 fi
 
-# Container name based on current project dir
 PROJECT_DIR="$(basename "$(pwd)")"
-CONTAINER_NAME="claude-box-${PROJECT_DIR}"
 
 # SSH agent forwarding so git push works inside the container
 SSH_AUTH_ARGS=()
@@ -34,7 +32,6 @@ elif [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
 fi
 
 exec docker run -it --rm \
-  --name "$CONTAINER_NAME" \
   -e CLAUDE_BOX=1 \
   ${SSH_AUTH_ARGS[@]+"${SSH_AUTH_ARGS[@]}"} \
   -v "$HOME/.claude:/home/node/.claude" \
