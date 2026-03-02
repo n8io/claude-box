@@ -31,33 +31,64 @@ RUN wget -O- https://apt.releases.hashicorp.com/gpg \
 RUN npm install -g playwright \
   && playwright install chromium --with-deps
 
-# ── Layers 4-8: User-level tools (run as node) ────────────────────────────────
+# ── Layer 4: Jira CLI ──────────────────────────────────────────────────────────
+RUN JIRA_LATEST=$(curl -fsSL https://api.github.com/repos/ankitpokhrel/jira-cli/releases/latest \
+      | jq -r '.tag_name') \
+  && case "$(dpkg --print-architecture)" in \
+      amd64) JIRA_ARCH=x86_64 ;; \
+      arm64) JIRA_ARCH=arm64 ;; \
+      *) echo "Unsupported arch: $(dpkg --print-architecture)" && exit 1 ;; \
+    esac \
+  && curl -fsSL "https://github.com/ankitpokhrel/jira-cli/releases/download/${JIRA_LATEST}/jira_${JIRA_LATEST#v}_linux_${JIRA_ARCH}.tar.gz" \
+      -o /tmp/jira.tar.gz \
+  && echo "jira-cli ${JIRA_LATEST} (${JIRA_ARCH}) SHA256: $(sha256sum /tmp/jira.tar.gz)" \
+  && tar -xzf /tmp/jira.tar.gz --wildcards '*/bin/jira' --strip-components=2 -C /usr/local/bin \
+  && rm /tmp/jira.tar.gz
+
+# ── Layers 5-9: User-level tools (run as node) ────────────────────────────────
 USER node
 ENV HOME=/home/node
 ENV PATH="/home/node/.local/bin:$PATH"
 
-# Layer 4: Claude Code (native installer)
-RUN curl -fsSL https://claude.ai/install.sh | bash
-
-# Layer 5: oh-my-zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-# Layer 6: zsh plugins
-RUN git clone https://github.com/zsh-users/zsh-autosuggestions \
-      ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
-  && git clone https://github.com/zsh-users/zsh-syntax-highlighting \
-      ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-
-# Layer 7: Configure .zshrc (theme + plugins)
-RUN sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="russell"/' $HOME/.zshrc \
-  && sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc
-
-# Layer 8: NVM + LTS Node
+# Layer 5: NVM + LTS Node (slowest changing)
 ENV NVM_DIR=$HOME/.nvm
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash \
+RUN NVM_LATEST=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest \
+      | jq -r '.tag_name') \
+  && curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_LATEST}/install.sh" \
+      -o /tmp/nvm-install.sh \
+  && echo "nvm ${NVM_LATEST} install.sh SHA256: $(sha256sum /tmp/nvm-install.sh)" \
+  && bash /tmp/nvm-install.sh \
+  && rm /tmp/nvm-install.sh \
   && . $NVM_DIR/nvm.sh \
   && nvm install --lts \
   && nvm alias default lts/*
+
+# Layer 6: oh-my-zsh
+RUN curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh \
+      -o /tmp/omz-install.sh \
+  && echo "oh-my-zsh install.sh SHA256: $(sha256sum /tmp/omz-install.sh)" \
+  && sh /tmp/omz-install.sh --unattended \
+  && rm /tmp/omz-install.sh
+
+# Layer 7: zsh plugins
+RUN git clone https://github.com/zsh-users/zsh-autosuggestions \
+      ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
+  && git -C ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
+      log -1 --format="zsh-autosuggestions commit: %H" \
+  && git clone https://github.com/zsh-users/zsh-syntax-highlighting \
+      ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
+  && git -C ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
+      log -1 --format="zsh-syntax-highlighting commit: %H"
+
+# Layer 8: Configure .zshrc (theme + plugins)
+RUN sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="russell"/' $HOME/.zshrc \
+  && sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc
+
+# Layer 9: Claude Code (fastest changing)
+RUN curl -fsSL https://claude.ai/install.sh -o /tmp/claude-install.sh \
+  && echo "claude install.sh SHA256: $(sha256sum /tmp/claude-install.sh)" \
+  && bash /tmp/claude-install.sh \
+  && rm /tmp/claude-install.sh
 
 WORKDIR /
 

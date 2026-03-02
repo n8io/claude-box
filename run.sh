@@ -18,12 +18,6 @@ fi
 PROJECT_DIR="$(basename "$(pwd)")"
 CONTAINER_NAME="claude-box-${PROJECT_DIR}"
 
-# Build optional API key flag (omit entirely if not set, so OAuth creds from ~/.claude are used)
-API_KEY_ARGS=()
-if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
-  API_KEY_ARGS=(-e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY")
-fi
-
 # SSH agent forwarding so git push works inside the container
 SSH_AUTH_ARGS=()
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -42,7 +36,6 @@ fi
 exec docker run -it --rm \
   --name "$CONTAINER_NAME" \
   -e CLAUDE_BOX=1 \
-  ${API_KEY_ARGS[@]+"${API_KEY_ARGS[@]}"} \
   ${SSH_AUTH_ARGS[@]+"${SSH_AUTH_ARGS[@]}"} \
   -v "$HOME/.claude:/home/node/.claude" \
   -v "$HOME/.claude.json:/home/node/.claude.json" \
